@@ -10,7 +10,7 @@ from fastapi.responses import FileResponse
 from pydantic import BaseModel, Field
 
 HERE = Path(__file__).resolve().parent
-MODEL_PATH = HERE.parent / "models" / "disease_model.pkl"
+MODEL_PATH = HERE.parent/"models"/ "disease_model.pkl"
 
 DISCLAIMER = (
     "Educational project using a public dataset. This is not medical advice "
@@ -60,7 +60,7 @@ class PredictResponse(BaseModel):
 
 @app.get("/", include_in_schema=False)
 def home():
-    return FileResponse(HERE / "index.html")
+    return FileResponse(HERE.parent / "index.html")
 
 
 @app.get("/symptoms")
