@@ -40,7 +40,7 @@ An educational machine learning web application built with **FastAPI** and **sci
 
 ```bash
 git clone <https://github.com/zahid-06/symptoms-checker>
-cd "symptoms checker"
+cd "symptoms-checker"
 ```
 
 ### 2. Install Dependencies
