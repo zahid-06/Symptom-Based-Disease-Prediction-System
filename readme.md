@@ -39,7 +39,7 @@ An educational machine learning web application built with **FastAPI** and **sci
 ### 1. Clone the Repository
 
 ```bash
-git clone <https://github.com/zahid-06/symptoms-checker>
+git clone https://github.com/zahid-06/symptoms-checker
 cd "symptoms-checker"
 ```
 
