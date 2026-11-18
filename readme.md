@@ -40,7 +40,7 @@ An educational machine learning web application built with **FastAPI** and **sci
 
 ```bash
 git clone https://github.com/zahid-06/Symptom-Based-Disease-Prediction-System
-cd "Symptom-Based-Prediction-System"
+cd Symptom-Based-Prediction-System
 ```
 
 ### 2. Install Dependencies
