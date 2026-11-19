@@ -95,7 +95,7 @@ summary{cursor:pointer;font-weight:600;font-size:14.5px;padding:4px 0;color:var(
 </div>
 
 <script>
-const QUICK=["fever","high_fever","cough","headache","fatigue","vomiting","nausea","chills","abdominal_pain","skin_rash"];
+const QUICK=["high_fever","mild_fever","cough","headache","fatigue","vomiting","nausea","chills","abdominal_pain","skin_rash"];
 let all=[];const sel=new Set();
 const $=id=>document.getElementById(id);
 const pretty=s=>s.replace(/_/g," ");
@@ -107,6 +107,15 @@ function chip(s){
   b.onclick=()=>toggle(s);
   return b;
 }
+function trayChip(s){
+  const b=document.createElement("button");
+  b.type="button";b.className="chip";b.dataset.s=s;
+  b.title="Click to remove "+pretty(s);
+  b.innerHTML=pretty(s)+' <span aria-hidden="true" style="opacity:0.75;font-weight:700;margin-left:4px">&times;</span>';
+  b.setAttribute("aria-pressed","true");
+  b.onclick=()=>toggle(s);
+  return b;
+}
 function toggle(s){
   sel.has(s)?sel.delete(s):sel.add(s);
   document.querySelectorAll('[data-s="'+s+'"]').forEach(el=>el.setAttribute("aria-pressed",sel.has(s)));
@@ -114,7 +123,7 @@ function toggle(s){
 }
 function tray(){
   const t=$("tray");t.innerHTML="";
-  sel.forEach(s=>t.appendChild(chip(s)));
+  sel.forEach(s=>t.appendChild(trayChip(s)));
   const n=sel.size;
   $("count").textContent=n===0?"0 selected":n+" selected"+(n<2?" (add at least 2)":"");
   $("bar").style.width=Math.min(100,n/3*100)+"%";
@@ -123,7 +132,15 @@ function list(){
   const q=$("search").value.toLowerCase().trim(),box=$("list");
   box.innerHTML="";
   const hits=all.filter(s=>pretty(s).includes(q));
-  if(!hits.length){box.textContent="No symptom matches that search. Try a shorter word.";return}
+  if(!hits.length){
+    const msg=document.createElement("p");
+    msg.className="empty";
+    msg.style.margin="8px 0";
+    msg.style.width="100%";
+    msg.textContent="No symptom matches that search. Try a shorter word or different term.";
+    box.appendChild(msg);
+    return;
+  }
   hits.forEach(s=>box.appendChild(chip(s)));
 }
 function fail(m){const e=$("err");e.textContent=m;e.hidden=false}
@@ -145,7 +162,17 @@ async function check(){
   const btn=$("go");btn.disabled=true;btn.textContent="Checking...";
   try{
     const r=await fetch("/predict",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({symptoms:[...sel]})});
-    if(!r.ok){fail("The server could not process this request. Try again in a moment.");return}
+    if(!r.ok){
+      let msg="The server could not process this request. Try again in a moment.";
+      try{
+        const errData=await r.json();
+        if(errData&&errData.detail){
+          msg=Array.isArray(errData.detail)?errData.detail.map(d=>d.msg||d).join(", "):errData.detail;
+        }
+      }catch(_){}
+      fail(msg);
+      return;
+    }
     show(await r.json());
   }catch(e){fail("Could not reach the server. Check your connection and try again.")}
   finally{btn.disabled=false;btn.textContent="Check symptoms"}
@@ -159,10 +186,15 @@ function show(d){
   row.appendChild(a);row.appendChild(el("span",null,"sum of symptom weights"));
   const m=el("div","meter");const mi=el("i");m.appendChild(mi);
   sv.append(row,m);out.appendChild(sv);
-  setTimeout(()=>mi.style.width=Math.round(d.severity_score/d.max_severity*100)+"%",30);
+  const ratio=d.max_severity>0?Math.round(d.severity_score/d.max_severity*100):0;
+  setTimeout(()=>mi.style.width=ratio+"%",30);
+
+  if(!d.predictions||!d.predictions.length){
+    out.appendChild(el("p","empty","No conditions closely matched the selected combination of symptoms. Please review your selections or consult a healthcare professional."));
+  }
 
   const bars=[];
-  d.predictions.forEach((p,i)=>{
+  (d.predictions||[]).forEach((p,i)=>{
     const art=el("article","hit");
     const h=el("header");h.appendChild(el("h3",null,(i+1)+". "+p.disease));
     const pc=Math.round(p.probability*100);
@@ -171,7 +203,7 @@ function show(d){
     const rg=el("div","range");rg.setAttribute("role","img");rg.setAttribute("aria-label","Match "+pc+" percent");
     const ri=el("i");rg.appendChild(ri);bars.push([ri,pc]);art.appendChild(rg);
     art.appendChild(el("p",null,p.description));
-    if(p.precautions.length){
+    if(p.precautions&&p.precautions.length){
       const dt=el("details");dt.appendChild(el("summary",null,"Suggested precautions"));
       const ul=el("ul");p.precautions.forEach(t=>ul.appendChild(el("li",null,t)));
       dt.appendChild(ul);art.appendChild(dt);
@@ -185,6 +217,12 @@ function show(d){
 }
 
 $("search").addEventListener("input",list);
+$("search").addEventListener("keydown",e=>{
+  if(e.key==="Enter"){
+    e.preventDefault();
+    if(sel.size>=2){check();}
+  }
+});
 $("go").onclick=check;
 $("clear").onclick=()=>{
   sel.clear();document.querySelectorAll(".chip").forEach(c=>c.setAttribute("aria-pressed","false"));

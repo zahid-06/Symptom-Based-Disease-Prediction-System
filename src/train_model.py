@@ -17,6 +17,7 @@ DISEASE_RENAME = {
     "Osteoarthristis": "Osteoarthritis",
     "(vertigo) Paroymsal Positional Vertigo": "(Vertigo) Paroxysmal Positional Vertigo",
     "hepatitis A": "Hepatitis A",
+    # Maps dataset/precaution spelling (double 'm') and description spelling (single 'm')
     "Dimorphic hemmorhoids(piles)": "Dimorphic hemorrhoids (piles)",
     "Dimorphic hemorrhoids(piles)": "Dimorphic hemorrhoids (piles)",
 }
@@ -47,17 +48,19 @@ for col in symptom_cols:
 severity_df["Symptom"] = severity_df["Symptom"].map(clean_symptom).replace(
     {"foul_smell_ofurine": "foul_smell_of_urine"}
 )
-severity_df = severity_df[severity_df["Symptom"] != "prognosis"]
+severity_df = severity_df[severity_df["Symptom"] != "prognosis"].drop_duplicates(
+    subset=["Symptom"], keep="first"
+)
 desc_df["Disease"] = desc_df["Disease"].map(clean_disease)
 prec_df["Disease"] = prec_df["Disease"].map(clean_disease)
 
 
 all_symptoms = sorted({s for s in data[symptom_cols].values.ravel() if isinstance(s, str)})
-X = pd.DataFrame(0, index=data.index, columns=all_symptoms)
-for col in symptom_cols:
-    for row, symptom in data[col].items():
-        if isinstance(symptom, str):
-            X.loc[row, symptom] = 1
+rows = []
+for _, row_vals in data[symptom_cols].iterrows():
+    present = {s for s in row_vals if isinstance(s, str)}
+    rows.append([1 if s in present else 0 for s in all_symptoms])
+X = pd.DataFrame(rows, columns=all_symptoms)
 y = data["Disease"]
 print(f"Rows: {len(X)} | Diseases: {y.nunique()} | Symptoms: {len(all_symptoms)}")
 

@@ -21,12 +21,12 @@ An educational machine learning web application built with **FastAPI** and **sci
 
 ## Project Structure
 
-- `dataset/` — Public CSV datasets used for training and metadata lookup:
+- `data/` — Public CSV datasets used for training and metadata lookup:
   - `dataset.csv` — Disease-to-symptom training records
   - `symptom_Description.csv` — Overview descriptions for each condition
   - `symptom_precaution.csv` — Recommended precautionary steps per condition
   - `Symptom-severity.csv` — Severity weights for individual symptoms
-- `model/` — Serialized model artifacts:
+- `models/` — Serialized model artifacts:
   - `disease_model.pkl` — Trained model and metadata bundle loaded at startup
 - `src/` — Application and training source code:
   - `main.py` — FastAPI application, lifespan model loader, and API routes
@@ -40,13 +40,21 @@ An educational machine learning web application built with **FastAPI** and **sci
 
 ```bash
 git clone https://github.com/zahid-06/Symptom-Based-Disease-Prediction-System
-cd Symptom-Based-Prediction-System
+cd Symptom-Based-Disease-Prediction-System
 ```
 
 ### 2. Install Dependencies
 
 ```bash
-pip install fastapi uvicorn scikit-learn pandas numpy joblib pydantic
+pip install -r requirements.txt
+```
+
+### 3. (Optional) Re-train the Model
+
+The repository already includes a pre-trained model bundle in `models/disease_model.pkl`. To re-train or update the model:
+
+```bash
+py src/train_model.py
 ```
 
 ### 4. Run the Application
